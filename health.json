@@ -1,0 +1,107 @@
+import React, { useEffect, useMemo, useState } from "react"; import { Card, CardContent } from "@/components/ui/card"; import { Button } from "@/components/ui/button"; import { Input } from "@/components/ui/input"; import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"; import { Check, Trash2 } from "lucide-react";
+
+// --- Daily Life Organizer + Health Tracker (MVP) --- // Features: // - Tasks with categories + persistence // - Routines (daily habits) // - Health logs (pain, energy, notes) // - Filters + simple analytics
+
+export default function LifeHealthMVP() { const [tasks, setTasks] = useState([]); const [input, setInput] = useState(""); const [category, setCategory] = useState("General"); const [filter, setFilter] = useState("all");
+
+const [routines, setRoutines] = useState([]); const [routineInput, setRoutineInput] = useState("");
+
+const [healthLogs, setHealthLogs] = useState([]); const [pain, setPain] = useState(""); const [energy, setEnergy] = useState(""); const [note, setNote] = useState("");
+
+// Load useEffect(() => { const saved = JSON.parse(localStorage.getItem("life_health_mvp") || "{}"); setTasks(saved.tasks || []); setRoutines(saved.routines || []); setHealthLogs(saved.healthLogs || []); }, []);
+
+// Save useEffect(() => { localStorage.setItem( "life_health_mvp", JSON.stringify({ tasks, routines, healthLogs }) ); }, [tasks, routines, healthLogs]);
+
+// --- Tasks --- const addTask = () => { if (!input.trim()) return; setTasks([ ...tasks, { id: Date.now(), text: input, category, completed: false }, ]); setInput(""); };
+
+const toggleTask = (id) => { setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)); };
+
+const deleteTask = (id) => setTasks(tasks.filter(t => t.id !== id));
+
+const filteredTasks = useMemo(() => { if (filter === "active") return tasks.filter(t => !t.completed); if (filter === "done") return tasks.filter(t => t.completed); return tasks; }, [tasks, filter]);
+
+// --- Routines --- const addRoutine = () => { if (!routineInput.trim()) return; setRoutines([...routines, { id: Date.now(), text: routineInput, done: false }]); setRoutineInput(""); };
+
+const toggleRoutine = (id) => { setRoutines(routines.map(r => r.id === id ? { ...r, done: !r.done } : r)); };
+
+// --- Health Logs --- const addHealthLog = () => { if (!pain && !energy && !note) return; setHealthLogs([ { id: Date.now(), pain, energy, note, date: new Date().toLocaleDateString(), }, ...healthLogs, ]); setPain(""); setEnergy(""); setNote(""); };
+
+return (
+
+Life Organizer + Health
+      <Tabs defaultValue="tasks">
+        <TabsList className="grid grid-cols-3">
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="routines">Routines</TabsTrigger>
+          <TabsTrigger value="health">Health</TabsTrigger>
+        </TabsList>
+
+        {/* TASKS */}
+        <TabsContent value="tasks" className="space-y-3">
+          <div className="flex gap-2">
+            <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Task..." />
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="General">General</SelectItem>
+                <SelectItem value="Health">Health</SelectItem>
+                <SelectItem value="Work">Work</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={addTask}>Add</Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={() => setFilter("all")}>All</Button>
+            <Button onClick={() => setFilter("active")}>Active</Button>
+            <Button onClick={() => setFilter("done")}>Done</Button>
+          </div>
+
+          {filteredTasks.map(t => (
+            <div key={t.id} className="flex justify-between bg-white p-2 rounded">
+              <span onClick={() => toggleTask(t.id)} className={t.completed ? "line-through" : ""}>{t.text}</span>
+              <div className="flex gap-2">
+                <Button size="icon" onClick={() => toggleTask(t.id)}><Check size={14}/></Button>
+                <Button size="icon" variant="destructive" onClick={() => deleteTask(t.id)}><Trash2 size={14}/></Button>
+              </div>
+            </div>
+          ))}
+        </TabsContent>
+
+        {/* ROUTINES */}
+        <TabsContent value="routines" className="space-y-3">
+          <div className="flex gap-2">
+            <Input value={routineInput} onChange={e => setRoutineInput(e.target.value)} placeholder="Daily habit..." />
+            <Button onClick={addRoutine}>Add</Button>
+          </div>
+
+          {routines.map(r => (
+            <div key={r.id} className="flex justify-between bg-white p-2 rounded">
+              <span onClick={() => toggleRoutine(r.id)} className={r.done ? "line-through" : ""}>{r.text}</span>
+            </div>
+          ))}
+        </TabsContent>
+
+        {/* HEALTH */}
+        <TabsContent value="health" className="space-y-3">
+          <div className="grid grid-cols-3 gap-2">
+            <Input placeholder="Pain (1-10)" value={pain} onChange={e => setPain(e.target.value)} />
+            <Input placeholder="Energy (1-10)" value={energy} onChange={e => setEnergy(e.target.value)} />
+            <Button onClick={addHealthLog}>Log</Button>
+          </div>
+
+          <Input placeholder="Notes..." value={note} onChange={e => setNote(e.target.value)} />
+
+          {healthLogs.map(h => (
+            <div key={h.id} className="bg-white p-2 rounded text-sm">
+              <div>{h.date}</div>
+              <div>Pain: {h.pain} | Energy: {h.energy}</div>
+              <div>{h.note}</div>
+            </div>
+          ))}
+        </TabsContent>
+      </Tabs>
+    </CardContent>
+  </Card>
+</div>
+); }
